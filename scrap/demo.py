@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import json
-
+import os
 
 def scrape_policy_page():
     url = "https://purdue.edu/vpec/policies/academic-research-affairs/ia4/"
@@ -43,6 +43,13 @@ def scrape_policy_page():
             })
             
     return policy_data
+
+def save_data(scraped_data, filepath="../data/purdue_policies.json"):
+    
+    # Ensuring that file exists
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    
+    
 
 data = scrape_policy_page()
 print(json.dumps(data, indent=4))
