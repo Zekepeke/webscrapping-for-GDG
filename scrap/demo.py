@@ -49,7 +49,8 @@ def save_data(scraped_data, filepath="../data/purdue_policies.json"):
     # Ensuring that file exists
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     
-    
-
-data = scrape_policy_page()
-print(json.dumps(data, indent=4))
+    # Using utf-8 encoding to prevent any weird bugs from web text
+    with open(filepath, "w", encoding="utf-8") as json_file:
+        
+        # Dumpping dictionary into the file
+        json.dump(scraped_data, json_file, indent=4, ensure_ascii=False)
