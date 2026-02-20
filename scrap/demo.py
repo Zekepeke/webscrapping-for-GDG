@@ -58,6 +58,7 @@ def save_data(scraped_data, filepath="data/purdue_policies.json"):
     
 
 if __name__ == "__main__":
+    # Example
     data = scrape_policy_page("https://purdue.edu/vpec/policies/academic-research-affairs/ia4/") 
     print(data)
     
