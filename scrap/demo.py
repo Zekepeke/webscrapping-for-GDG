@@ -3,8 +3,7 @@ from bs4 import BeautifulSoup
 import json
 import os
 
-def scrape_policy_page():
-    url = "https://purdue.edu/vpec/policies/academic-research-affairs/ia4/"
+def scrape_policy_page(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     
@@ -56,3 +55,10 @@ def save_data(scraped_data, filepath="../data/purdue_policies.json"):
         json.dump(scraped_data, json_file, indent=4, ensure_ascii=False)
     
     print(f"Saved data to {filepath}")
+    
+
+if __name__ == "__main__":
+    data = scrape_policy_page("https://purdue.edu/vpec/policies/academic-research-affairs/ia4/") 
+    
+    # Save it to the new folder
+    save_data(data)
