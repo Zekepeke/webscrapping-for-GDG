@@ -54,3 +54,5 @@ def save_data(scraped_data, filepath="../data/purdue_policies.json"):
         
         # Dumpping dictionary into the file
         json.dump(scraped_data, json_file, indent=4, ensure_ascii=False)
+    
+    print(f"Saved data to {filepath}")
