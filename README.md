@@ -9,3 +9,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 ```
+for running the test case, just run test.py.
+
+it compares the one of the websites we scraped to the "answer key", which is
+another json that has the correct json format with all the correct information.
