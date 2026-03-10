@@ -1,0 +1,130 @@
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin, urlparse
+import json
+import time
+
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from scrap import scrap_3
+
+MAX_LINKS = 30  # Gather first 30 hyperlinks before crawling
+
+
+def get_links(url: str, starter_url: str) -> list:
+    """Fetch a page and return up to MAX_LINKS same-subdomain hrefs."""
+    try:
+        r = requests.get(url, timeout=10)
+        if r.status_code != 200:
+            return []
+
+        soup = BeautifulSoup(r.content, 'html.parser')
+        links = []
+
+        for a in soup.find_all('a', href=True):
+            href = a['href']
+            full_url = urljoin(url, href).split('#')[0]  # strip fragments
+            parsed = urlparse(full_url)
+
+            # must be same domain AND stay under the starter path
+            if parsed.netloc != urlparse(starter_url).netloc:
+                continue
+            if not parsed.path.startswith(urlparse(starter_url).path):
+                continue
+            if full_url not in links:
+                links.append(full_url)
+            if len(links) >= MAX_LINKS:  # Stop at 30
+                break
+
+        return links
+
+    except Exception as e:
+        print(f"[get_links] Error fetching {url}: {e}")
+        return []
+
+
+def crawler(starter_url: str, max_pages: int = 10):
+    """
+    DFS crawler:
+      1. From each page, gather the first 30 hyperlinks
+      2. Scrape & score each page
+      3. Pages with score > 0  → relevant, saved to JSON
+         Pages with all scores negative → print "nothing relevant" message
+    """
+    stack   = [starter_url]   # DFS uses a stack (list)
+    visited = set()
+    all_data = []
+    pages_crawled = 0
+
+    while stack and pages_crawled < max_pages:
+        url = stack.pop()  # DFS: pop from end
+
+        if url in visited:
+            continue
+
+        print(f"[DFS] Crawling ({pages_crawled + 1}/{max_pages}): {url}")
+        visited.add(url)
+        pages_crawled += 1
+
+        try:
+            # ── Scrape & score ──────────────────────────────────
+            page_data = scrap_3.scrape_policy_page_final(url)
+            all_data.append(page_data)
+
+            score = page_data["score"]
+            label = "✅ RELEVANT" if score > 0 else "❌ not relevant"
+            print(f"   Score: {score}  {label}  — {page_data['title']}")
+
+            # ── Gather first 30 links → push unvisited onto stack ──
+            links = get_links(url, starter_url)
+            for link in reversed(links):  # reversed so first link is processed first
+                if link not in visited:
+                    stack.append(link)
+
+            time.sleep(0.5)  # be polite
+
+        except Exception as e:
+            print(f"[crawler] Error on {url}: {e}")
+            continue
+
+    # ── Filter & output ────────────────────────────────────────
+    relevant   = [d for d in all_data if d["score"] > 0]
+    irrelevant = [d for d in all_data if d["score"] <= 0]
+
+    print("\n" + "=" * 60)
+
+    if not relevant:
+        print("⚠️  Nothing relevant to Purdue Policy was found.")
+        print(f"   ({len(irrelevant)} pages crawled, all scored negative)\n")
+    else:
+        relevant_sorted = sorted(relevant, key=lambda x: x["score"], reverse=True)
+        print(f"✅ Found {len(relevant_sorted)} Purdue Policy-relevant page(s):\n")
+        for d in relevant_sorted:
+            print(f"   [{d['score']:>4}]  {d['title']}")
+            print(f"          {d['url']}")
+
+    # ── Save ALL scored data to JSON ───────────────────────────
+    output = {
+        "summary": {
+            "total_crawled":    len(all_data),
+            "relevant_count":   len(relevant),
+            "irrelevant_count": len(irrelevant)
+        },
+        "relevant_pages":   sorted(relevant,   key=lambda x: x["score"], reverse=True),
+        "irrelevant_pages": sorted(irrelevant, key=lambda x: x["score"], reverse=True)
+    }
+
+    with open("policies.json", "w") as f:
+        json.dump(output, f, indent=4)
+
+    print(f"\n💾 Saved to policies.json  ({len(all_data)} total pages)\n")
+
+
+# ── Entry point ────────────────────────────────────────────────
+starter_url = "https://www.purdue.edu/policies/"
+starter_url = "https://housing.purdue.edu/"
+starter_url = "https://www.purdue.edu/studentregulations/"
+starter_url = "https://www.purdue.edu/provost/"
+crawler(starter_url, max_pages=30)
