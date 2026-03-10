@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import json
 
 
-def scrape_policy_page(url):
+def scrape_policy_page_final(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     
@@ -50,5 +50,3 @@ def scrape_policy_page(url):
             
     return policy_data
 
-data = scrape_policy_page("https://www.purdue.edu/vpec/policies/academic-research-affairs/ia4/")
-print(json.dumps(data, indent=4))
