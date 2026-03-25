@@ -123,7 +123,6 @@ def crawler(starter_url: str, max_pages: int = 10):
 
 
 # ── Entry point ────────────────────────────────────────────────
-starter_url = "https://www.purdue.edu/policies/"
 starter_url = "https://housing.purdue.edu/"
 starter_url = "https://www.purdue.edu/studentregulations/"
 starter_url = "https://www.purdue.edu/provost/"
