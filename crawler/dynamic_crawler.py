@@ -10,7 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from scrap import scrap_3
 
-MAX_LINKS = 30  # Gather first 30 hyperlinks before crawling
+MAX_LINKS = 30
 
 
 def get_links(url: str, starter_url: str) -> list:
@@ -25,17 +25,16 @@ def get_links(url: str, starter_url: str) -> list:
 
         for a in soup.find_all('a', href=True):
             href = a['href']
-            full_url = urljoin(url, href).split('#')[0]  # strip fragments
+            full_url = urljoin(url, href).split('#')[0]
             parsed = urlparse(full_url)
 
-            # must be same domain AND stay under the starter path
             if parsed.netloc != urlparse(starter_url).netloc:
                 continue
             if not parsed.path.startswith(urlparse(starter_url).path):
                 continue
             if full_url not in links:
                 links.append(full_url)
-            if len(links) >= MAX_LINKS:  # Stop at 30
+            if len(links) >= MAX_LINKS:
                 break
 
         return links
@@ -50,16 +49,16 @@ def crawler(starter_url: str, max_pages: int = 10):
     DFS crawler:
       1. From each page, gather the first 30 hyperlinks
       2. Scrape & score each page
-      3. Pages with score > 0  → relevant, saved to JSON
+      3. Pages with score > 0  → save to Firebase + local JSON
          Pages with all scores negative → print "nothing relevant" message
     """
-    stack   = [starter_url]   # DFS uses a stack (list)
+    stack   = [starter_url]
     visited = set()
     all_data = []
     pages_crawled = 0
 
     while stack and pages_crawled < max_pages:
-        url = stack.pop()  # DFS: pop from end
+        url = stack.pop()
 
         if url in visited:
             continue
@@ -77,13 +76,17 @@ def crawler(starter_url: str, max_pages: int = 10):
             label = "✅ RELEVANT" if score > 0 else "❌ not relevant"
             print(f"   Score: {score}  {label}  — {page_data['title']}")
 
-            # ── Gather first 30 links → push unvisited onto stack ──
+            # ── Save relevant pages to Firebase immediately ──────
+            if page_data["relevant"]:
+                scrap_3.save_to_firebase(page_data)
+
+            # ── Gather links → push unvisited onto stack ─────────
             links = get_links(url, starter_url)
-            for link in reversed(links):  # reversed so first link is processed first
+            for link in reversed(links):
                 if link not in visited:
                     stack.append(link)
 
-            time.sleep(0.5)  # be polite
+            time.sleep(0.5)
 
         except Exception as e:
             print(f"[crawler] Error on {url}: {e}")
@@ -105,7 +108,7 @@ def crawler(starter_url: str, max_pages: int = 10):
             print(f"   [{d['score']:>4}]  {d['title']}")
             print(f"          {d['url']}")
 
-    # ── Save ALL scored data to JSON ───────────────────────────
+    # ── Save ALL scored data to local JSON as well ─────────────
     output = {
         "summary": {
             "total_crawled":    len(all_data),
@@ -119,11 +122,10 @@ def crawler(starter_url: str, max_pages: int = 10):
     with open("policies.json", "w") as f:
         json.dump(output, f, indent=4)
 
-    print(f"\n💾 Saved to policies.json  ({len(all_data)} total pages)\n")
+    print(f"\n💾 Saved to policies.json  ({len(all_data)} total pages)")
+    print(f"🔥 Relevant pages also saved to Firebase 'pages' collection\n")
 
 
 # ── Entry point ────────────────────────────────────────────────
-starter_url = "https://housing.purdue.edu/"
-starter_url = "https://www.purdue.edu/studentregulations/"
-starter_url = "https://www.purdue.edu/provost/"
-crawler(starter_url, max_pages=30)
+starter_url = "https://catalog.purdue.edu/content.php?catoid=15&navoid=18634"
+crawler(starter_url, max_pages=50)
