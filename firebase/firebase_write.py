@@ -18,6 +18,3 @@ def upload_scraped_policy(scraped_data):
     # Merge=True ensures we update existing docs or create new ones
     doc_ref.set(scraped_data, merge=True)
     print(f"Successfully uploaded/updated: {doc_id}")
-
-# Example usage with your data
-upload_scraped_policy(policy_data)
