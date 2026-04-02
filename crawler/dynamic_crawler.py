@@ -56,9 +56,8 @@ def crawler(starter_url: str, max_pages: int = 10):
     """
     DFS crawler:
       1. From each page, gather the first 30 hyperlinks
-      2. Scrape & score each page
-      3. Pages with score > 0  → save to Firebase + local JSON
-         Pages with all scores negative → print "nothing relevant" message
+      2. Scrape each page
+      3. Save all pages to Firebase, skipping duplicates
     """
     stack   = [starter_url]
     visited = set()
@@ -83,29 +82,26 @@ def crawler(starter_url: str, max_pages: int = 10):
         pages_crawled += 1
 
         try:
-            # ── Scrape & score ──────────────────────────────────
+            # ── Scrape ─────────────────────────────────────────
             page_data = scrap_3.scrape_policy_page_final(url)
             page_data["document_id"] = make_document_id(page_data["url"])
             all_data.append(page_data)
 
-            score = page_data["score"]
-            label = "✅ RELEVANT" if score > 0 else "❌ not relevant"
-            print(f"   Score: {score}  {label}  — {page_data['title']}")
+            print(f"   Scraped — {page_data['title']}")
 
-            # ── Save relevant pages to Firebase immediately ──────
-            if page_data["relevant"]:
-                doc_id = page_data["document_id"]
-                page_url = page_data["url"]
+            # ── Save to Firebase, skipping duplicates ───────────
+            doc_id   = page_data["document_id"]
+            page_url = page_data["url"]
 
-                if doc_id in existing_doc_ids or page_url in existing_urls:
-                    duplicate_count += 1
-                    print(f"   Skipping duplicate (already in Firebase): {page_data['title']}")
-                else:
-                    wrote = firebase_write.upload_scraped_policy(page_data, skip_if_exists=True)
-                    if wrote:
-                        uploaded_count += 1
-                        existing_doc_ids.add(doc_id)
-                        existing_urls.add(page_url)
+            if doc_id in existing_doc_ids or page_url in existing_urls:
+                duplicate_count += 1
+                print(f"   Skipping duplicate (already in Firebase): {page_data['title']}")
+            else:
+                wrote = firebase_write.upload_scraped_policy(page_data, skip_if_exists=True)
+                if wrote:
+                    uploaded_count += 1
+                    existing_doc_ids.add(doc_id)
+                    existing_urls.add(page_url)
 
             # ── Gather links → push unvisited onto stack ─────────
             links = get_links(url, starter_url)
@@ -119,33 +115,21 @@ def crawler(starter_url: str, max_pages: int = 10):
             print(f"[crawler] Error on {url}: {e}")
             continue
 
-    # ── Filter & output ────────────────────────────────────────
-    relevant   = [d for d in all_data if d["score"] > 0]
-    irrelevant = [d for d in all_data if d["score"] <= 0]
-
+    # ── Output summary ─────────────────────────────────────────
     print("\n" + "=" * 60)
+    print(f"✅ Crawled {len(all_data)} page(s) total.\n")
+    for d in all_data:
+        print(f"   {d['title']}")
+        print(f"   {d['url']}")
 
-    if not relevant:
-        print("⚠️  Nothing relevant to Purdue Policy was found.")
-        print(f"   ({len(irrelevant)} pages crawled, all scored negative)\n")
-    else:
-        relevant_sorted = sorted(relevant, key=lambda x: x["score"], reverse=True)
-        print(f"✅ Found {len(relevant_sorted)} Purdue Policy-relevant page(s):\n")
-        for d in relevant_sorted:
-            print(f"   [{d['score']:>4}]  {d['title']}")
-            print(f"          {d['url']}")
-
-    # ── Save ALL scored data to local JSON as well ─────────────
+    # ── Save all data to local JSON ────────────────────────────
     output = {
         "summary": {
-            "total_crawled":    len(all_data),
-            "relevant_count":   len(relevant),
-            "irrelevant_count": len(irrelevant),
-            "firebase_uploaded": uploaded_count,
+            "total_crawled":              len(all_data),
+            "firebase_uploaded":          uploaded_count,
             "firebase_duplicates_skipped": duplicate_count,
         },
-        "relevant_pages":   sorted(relevant,   key=lambda x: x["score"], reverse=True),
-        "irrelevant_pages": sorted(irrelevant, key=lambda x: x["score"], reverse=True)
+        "pages": all_data,
     }
 
     with open("policies.json", "w") as f:
