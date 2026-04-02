@@ -3,14 +3,22 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import json
 import time
+import hashlib
 
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from scrap import scrap_3
+from firebase import firebase_write
 
 MAX_LINKS = 30
+
+
+def make_document_id(url: str) -> str:
+    """Stable doc ID so repeated runs map the same URL to one Firestore doc."""
+    digest = hashlib.sha1(url.encode("utf-8")).hexdigest()[:20]
+    return f"policy_{digest}"
 
 
 def get_links(url: str, starter_url: str) -> list:
@@ -56,6 +64,13 @@ def crawler(starter_url: str, max_pages: int = 10):
     visited = set()
     all_data = []
     pages_crawled = 0
+    uploaded_count = 0
+    duplicate_count = 0
+
+    existing_doc_ids, existing_urls = firebase_write.fetch_existing_policies()
+    print(
+        f"[Firebase] Found {len(existing_doc_ids)} existing policy docs; duplicates will be skipped."
+    )
 
     while stack and pages_crawled < max_pages:
         url = stack.pop()
@@ -70,6 +85,7 @@ def crawler(starter_url: str, max_pages: int = 10):
         try:
             # ── Scrape & score ──────────────────────────────────
             page_data = scrap_3.scrape_policy_page_final(url)
+            page_data["document_id"] = make_document_id(page_data["url"])
             all_data.append(page_data)
 
             score = page_data["score"]
@@ -78,7 +94,18 @@ def crawler(starter_url: str, max_pages: int = 10):
 
             # ── Save relevant pages to Firebase immediately ──────
             if page_data["relevant"]:
-                scrap_3.save_to_firebase(page_data)
+                doc_id = page_data["document_id"]
+                page_url = page_data["url"]
+
+                if doc_id in existing_doc_ids or page_url in existing_urls:
+                    duplicate_count += 1
+                    print(f"   Skipping duplicate (already in Firebase): {page_data['title']}")
+                else:
+                    wrote = firebase_write.upload_scraped_policy(page_data, skip_if_exists=True)
+                    if wrote:
+                        uploaded_count += 1
+                        existing_doc_ids.add(doc_id)
+                        existing_urls.add(page_url)
 
             # ── Gather links → push unvisited onto stack ─────────
             links = get_links(url, starter_url)
@@ -113,7 +140,9 @@ def crawler(starter_url: str, max_pages: int = 10):
         "summary": {
             "total_crawled":    len(all_data),
             "relevant_count":   len(relevant),
-            "irrelevant_count": len(irrelevant)
+            "irrelevant_count": len(irrelevant),
+            "firebase_uploaded": uploaded_count,
+            "firebase_duplicates_skipped": duplicate_count,
         },
         "relevant_pages":   sorted(relevant,   key=lambda x: x["score"], reverse=True),
         "irrelevant_pages": sorted(irrelevant, key=lambda x: x["score"], reverse=True)
@@ -123,7 +152,9 @@ def crawler(starter_url: str, max_pages: int = 10):
         json.dump(output, f, indent=4)
 
     print(f"\n💾 Saved to policies.json  ({len(all_data)} total pages)")
-    print(f"🔥 Relevant pages also saved to Firebase 'pages' collection\n")
+    print(
+        f"🔥 Firebase policies uploaded: {uploaded_count} | duplicates skipped: {duplicate_count}\n"
+    )
 
 
 # ── Entry point ────────────────────────────────────────────────
