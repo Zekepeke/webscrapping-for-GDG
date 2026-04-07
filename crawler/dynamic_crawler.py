@@ -145,19 +145,19 @@ def crawler(starter_url: str, base_category: str, max_pages: int = 10):
 # ── Entry point ────────────────────────────────────────────────
 if __name__ == "__main__":
     target_sites = [
-        # Core Services
-        {"url": "https://dining.purdue.edu", "category": "Dining"},
-        {"url": "https://www.purdue.edu/treasurer/finance/bursar-office/", "category": "Financial/Bursar"},
-        {"url": "https://housing.purdue.edu", "category": "Housing"},
-        {"url": "https://www.purdue.edu/registrar/", "category": "Registrar"},
-        {"url": "https://www.purdue.edu/dfa/", "category": "Financial Aid"},
-        {"url": "https://admissions.purdue.edu", "category": "Admissions"},
+        # # Core Services
+        # {"url": "https://dining.purdue.edu", "category": "Dining"},
+        # {"url": "https://www.purdue.edu/treasurer/finance/bursar-office/", "category": "Financial/Bursar"},
+        # {"url": "https://housing.purdue.edu", "category": "Housing"},
+        # {"url": "https://www.purdue.edu/registrar/", "category": "Registrar"},
+        # {"url": "https://www.purdue.edu/dfa/", "category": "Financial Aid"},
+        # {"url": "https://admissions.purdue.edu", "category": "Admissions"},
         
-        # Student Life & Health
-        {"url": "https://www.purdue.edu/home/life-at-purdue/", "category": "Student Life"},
-        {"url": "https://www.purdue.edu/push", "category": "Student Health (PUSH)"},
-        {"url": "https://www.purdue.edu/odos/", "category": "Dean of Students"},
-        {"url": "https://recwell.purdue.edu", "category": "Recreation (CoRec)"},
+        # # Student Life & Health
+        # {"url": "https://www.purdue.edu/home/life-at-purdue/", "category": "Student Life"},
+        # {"url": "https://www.purdue.edu/push", "category": "Student Health (PUSH)"},
+        # {"url": "https://www.purdue.edu/odos/", "category": "Dean of Students"},
+        # {"url": "https://recwell.purdue.edu", "category": "Recreation (CoRec)"},
         
         # Academic & Research
         {"url": "https://catalog.purdue.edu", "category": "Purdue Catalog"},
