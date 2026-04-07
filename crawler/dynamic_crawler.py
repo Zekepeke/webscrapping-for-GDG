@@ -179,7 +179,7 @@ if __name__ == "__main__":
         {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24220", "category": "College of Liberal Arts"},
         {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24203", "category": "Honors College"},
         
-        # TODO: Add remaining college catalog URLs from your brainstorm list:
+        # TODO: Add remaining college catalog URLs:
         # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24215", "category": "College of Agriculture"},
         # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24217", "category": "College of Education"},
         # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24219", "category": "College of Health and Human Sciences"},
