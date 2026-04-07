@@ -52,7 +52,7 @@ def get_links(url: str, starter_url: str) -> list:
         return []
 
 
-def crawler(starter_url: str, max_pages: int = 10):
+def crawler(starter_url: str, base_category: str, max_pages: int = 10):
     """
     DFS crawler:
       1. From each page, gather the first 30 hyperlinks
@@ -86,6 +86,7 @@ def crawler(starter_url: str, max_pages: int = 10):
             # ── Scrape & score ──────────────────────────────────
             page_data = scrap_3.scrape_policy_page_final(url)
             page_data["document_id"] = make_document_id(page_data["url"])
+            page_data["category"] = base_category
             all_data.append(page_data)
 
             score = page_data["score"]
@@ -158,5 +159,58 @@ def crawler(starter_url: str, max_pages: int = 10):
 
 
 # ── Entry point ────────────────────────────────────────────────
-starter_url = "https://catalog.purdue.edu/content.php?catoid=15&navoid=18634"
-crawler(starter_url, max_pages=50)
+if __name__ == "__main__":
+    target_sites = [
+        # Core Services
+        {"url": "https://dining.purdue.edu", "category": "Dining"},
+        {"url": "https://www.purdue.edu/treasurer/finance/bursar-office/", "category": "Financial/Bursar"},
+        {"url": "https://housing.purdue.edu", "category": "Housing"},
+        {"url": "https://www.purdue.edu/registrar/", "category": "Registrar"},
+        {"url": "https://www.purdue.edu/dfa/", "category": "Financial Aid"},
+        {"url": "https://admissions.purdue.edu", "category": "Admissions"},
+        
+        # Student Life & Health
+        {"url": "https://www.purdue.edu/home/life-at-purdue/", "category": "Student Life"},
+        {"url": "https://www.purdue.edu/push", "category": "Student Health (PUSH)"},
+        {"url": "https://www.purdue.edu/odos/", "category": "Dean of Students"},
+        {"url": "https://recwell.purdue.edu", "category": "Recreation (CoRec)"},
+        
+        # Academic & Research
+        {"url": "https://catalog.purdue.edu", "category": "Purdue Catalog"},
+        {"url": "https://gradschool.purdue.edu", "category": "Graduate School"},
+        {"url": "https://lib.purdue.edu", "category": "Libraries"},
+        {"url": "https://purdue.edu/research", "category": "Research"},
+        {"url": "https://purdue.edu/academics", "category": "Colleges/Departments"},
+        
+        # Campus Services
+        {"url": "https://it.purdue.edu", "category": "IT/ITaP"},
+        {"url": "https://cco.purdue.edu", "category": "Career Center (CCO)"},
+        {"url": "https://www.purdue.edu/parking/", "category": "Parking & Transit"},
+        {"url": "https://purdue.edu/policies", "category": "Policies"},
+        
+        # Catalog - Colleges (add more as needed)
+        {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24218", "category": "College of Engineering"},
+        {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24224", "category": "College of Science"},
+        {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24216", "category": "Daniels School of Business"},
+        {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24220", "category": "College of Liberal Arts"},
+        {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24203", "category": "Honors College"},
+        
+        # TODO: Add remaining college catalog URLs from your brainstorm list:
+        # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24215", "category": "College of Agriculture"},
+        # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24217", "category": "College of Education"},
+        # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24219", "category": "College of Health and Human Sciences"},
+        # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24222", "category": "Libraries and School of Information Studies"},
+        # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24223", "category": "College of Pharmacy"},
+        # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24221", "category": "Polytechnic Institute"},
+        # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24225", "category": "College of Veterinary Medicine"},
+        # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24231", "category": "Joint and Special Programs"},
+        # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=24214", "category": "Purdue University in Indianapolis"},
+        # {"url": "https://catalog.purdue.edu/content.php?catoid=18&navoid=2364", "category": "Exploratory Studies"},
+    ]
+
+    for site in target_sites:
+        print(f"\n{'='*60}")
+        print(f"Starting crawl for {site['category']}...")
+        print(f"URL: {site['url']}")
+        print('='*60)
+        crawler(starter_url=site["url"], base_category=site["category"], max_pages=50)
