@@ -1,0 +1,3 @@
+run the pdfparser
+run the basic cralwer
+run the classifier

@@ -20,7 +20,7 @@ def scrape_policy_page_final(url):
     # Might need to change logic based on if the pages have different HTML structure
     
     content_div = soup.find('div', class_= 'content')
-    firstp = content_div.find('p')
+    firstp = content_div.find('p') if content_div else None
     raw_text = firstp.get_text(separator='\n', strip=True) if firstp else ""
 
     for line in raw_text.split('\n'):
